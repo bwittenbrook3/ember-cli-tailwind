@@ -1,4 +1,3 @@
-import Router from '../router';
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
 
@@ -20,9 +19,11 @@ export function initialize(appInstance) {
   let router = appInstance.lookup('service:router')._router;
   let initialURL = router.initialURL || ((window && window.location) ? window.location.href : ''); // fastboot guard :/
 
+
   if (notUsingFastboot && initialURL.match('/tailwind')) {
     appInstance.register('route:application', TailwindApplicationRoute);
-    Router.map(function() {
+
+    appInstance.lookup('router:main').map(function() {
       this.route('tailwind');
     });
   }

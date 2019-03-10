@@ -8,22 +8,33 @@ const buildTailwind = require('./lib/build-tailwind');
 const mv = require('broccoli-stew').mv;
 const debugTree = require('broccoli-debug').buildDebugCallback(`ember-cli-tailwind:${this.name}`);
 
-const buildDestinations = {
+const buildTargets = {
   dummy: {
     path: 'tests/dummy/app',
-    type: 'app'
+    type: 'app',
+    type: 'app',
+    stylesPath: ''
   },
   app: {
     path: 'app',
-    type: 'app'
+    type: 'app',
+    type: 'app',
+    stylesPath: 'app/styles'
   },
   addon: {
     path: 'addon',
-    type: 'addon'
+    type: 'addon',
+    type: 'addon',
+    stylesPath: ''
+  },
+  mu: {
+    path: 'src',
+    type: 'app',
+    stylesPath: 'src/ui/styles'
   }
 };
 
-const validBuildTargets = Object.keys(buildDestinations);
+const validBuildTargets = Object.keys(buildTargets);
 
 module.exports = {
   name: 'ember-cli-tailwind',
@@ -43,20 +54,13 @@ module.exports = {
       this.ui.writeWarnLine('You no longer need to specify a buildTarget - it is now derived from your project files. Please delete this config option.')
     }
 
-    let buildTarget;
-    if (fs.existsSync(!this.project.isEmberCLIAddon() && this.project.root + '/app/tailwind')) {
-      buildTarget = 'app';
-    } else if (fs.existsSync(includer.root + '/addon/tailwind')) {
-      buildTarget = 'addon';
-    } else if (includer.name === "dummy" && fs.existsSync(process.cwd() + '/tests/dummy/app/tailwind')) {
-      buildTarget = 'dummy';
-    }
+    let buildTarget = this._findBuildTarget(includer.project.root)
 
     if (!this._validateBuildTarget(buildTarget, includer)) {
       return;
     }
 
-    let buildConfig = buildDestinations[buildTarget];
+    let buildConfig = buildTargets[buildTarget];
 
     if (this._shouldIncludeStyleguide()) {
       this.import('vendor/etw.css');
@@ -70,7 +74,7 @@ module.exports = {
     let trees = tree ? [ tree ] : [];
 
     if (this.projectType === 'app' && this._hasTailwindConfig() && this._shouldBuildTailwind()) {
-      trees.push(mv(buildTailwind(this), 'app/styles'));
+      trees.push(mv(buildTailwind(this), 'src/ui/styles'));
     }
 
     return debugTree(new Merge(trees), 'tree-for-styles');
@@ -105,6 +109,14 @@ module.exports = {
   },
 
   // Private
+
+  _findBuildTarget(root) {
+    for (let [target, config] of Object.entries(buildTargets)) {
+      if (fs.existsSync(path.join(root, config.path, 'tailwind'))) {
+        return target;
+      }
+    }
+  },
 
   _getInputPath(root, inputPath) {
     if (typeof inputPath !== 'string') {
